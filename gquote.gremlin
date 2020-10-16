@@ -1,0 +1,82 @@
+
+// Create Graph
+
+CREATE KEYSPACE gquotes WITH replication = {'class': 'NetworkTopologyStrategy', 'DC1': '1'}  AND durable_writes = true AND graph_engine = 'Core';
+
+
+// **************
+// VERTEX LABELS
+// **************
+
+
+// START-createVL_person
+schema.vertexLabel('person').
+  ifNotExists().
+  partitionBy('person_id', Text).
+  property('name', Text).
+  property('title', Text).
+  property('company', Text).
+  create()
+
+schema.vertexLabel('person').materializedView('person_by_name').ifNotExists().partitionBy('name').clusterBy('person_id', Asc).create()
+
+// START-createVL_quote
+schema.vertexLabel('quote').
+  ifNotExists().
+  partitionBy('quote_id', Text).
+  property('snippet', Text).
+  property('category', listOf(Text)).
+  create()
+
+// START-createVL_keywords
+schema.vertexLabel('keyword').
+  ifNotExists().
+  partitionBy('key', Text).
+  create()
+
+
+// ************
+// EDGE LABELS
+// ************
+
+// START-createELs_person_mentioned_quote
+schema.edgeLabel('mentioned').
+  ifNotExists().
+  from('person').to('quote').
+  create()
+// END-createELs_person_mentioned_quote
+
+
+// START-createELs_keyword_foundin_quote
+schema.edgeLabel('foundin').
+  ifNotExists().
+  from('keyword').to('quote').
+  create()
+// END-createELs_keyword_foundin_quote
+
+
+// ********
+// DATA
+// ********
+
+g.addV('person').
+  property('person_id', 'e7cd5752-bc0d-4157-a80f-7523add8dbcd' as UUID).
+  property('name', 'Chet Kapoor').
+  property('title', 'CEO').
+  property('company','DataStax').
+  iterate();
+
+g.addV('quote').
+  property('quote_id', 'daa02698-df4f-4436-8855-941774f4c3e0' as UUID).
+  property('snippet', 'We think Apache Cassandra works really well. It s a great community. It s vibrant, it s getting more and more energized as we go along. And then obviously Kubernetes is a big part of what cloud-native is. ... And so peanut butter and jelly, Cassandra and Kubernetes - thats how we think about it').
+  iterate();
+
+
+g.with('allow-filtering') 
+
+g.V().has('person', 'name', 'Chet Kapoor').as('a').
+   V().has('quote', 'quote_id', 'daa02698-df4f-4436-8855-941774f4c3e0').as('b').
+   addE('mentioned').
+   from('a').to('b').
+   iterate();
+
