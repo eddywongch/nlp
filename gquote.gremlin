@@ -54,20 +54,26 @@ schema.edgeLabel('foundin').
   create()
 // END-createELs_keyword_foundin_quote
 
+// START-createELs_person_implied_keyword
+schema.edgeLabel('implied').
+  ifNotExists().
+  from('person').to('keyword').
+  create()
+// END-createELs_keyword_foundin_quote
 
 // ********
 // DATA
 // ********
 
 g.addV('person').
-  property('person_id', 'e7cd5752-bc0d-4157-a80f-7523add8dbcd' as UUID).
+  property('person_id', 'e7cd5752-bc0d-4157-a80f-7523add8dbcd').
   property('name', 'Chet Kapoor').
   property('title', 'CEO').
   property('company','DataStax').
   iterate();
 
 g.addV('quote').
-  property('quote_id', 'daa02698-df4f-4436-8855-941774f4c3e0' as UUID).
+  property('quote_id', 'daa02698-df4f-4436-8855-941774f4c3e0').
   property('snippet', 'We think Apache Cassandra works really well. It s a great community. It s vibrant, it s getting more and more energized as we go along. And then obviously Kubernetes is a big part of what cloud-native is. ... And so peanut butter and jelly, Cassandra and Kubernetes - thats how we think about it').
   iterate();
 
