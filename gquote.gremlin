@@ -59,12 +59,16 @@ schema.edgeLabel('implied').
   ifNotExists().
   from('person').to('keyword').
   create()
-// END-createELs_keyword_foundin_quote
+// END-createELs_keyword_implied_quote
 
 // ********
 // DATA
 // ********
+g.with('allow-filtering')
 
+// Vertices
+
+// Person
 g.addV('person').
   property('person_id', 'e7cd5752-bc0d-4157-a80f-7523add8dbcd').
   property('name', 'Chet Kapoor').
@@ -72,17 +76,56 @@ g.addV('person').
   property('company','DataStax').
   iterate();
 
+// Quote
 g.addV('quote').
   property('quote_id', 'daa02698-df4f-4436-8855-941774f4c3e0').
   property('snippet', 'We think Apache Cassandra works really well. It s a great community. It s vibrant, it s getting more and more energized as we go along. And then obviously Kubernetes is a big part of what cloud-native is. ... And so peanut butter and jelly, Cassandra and Kubernetes - thats how we think about it').
   iterate();
 
+// Keyword
+g.addV('keyword').
+  property('key', 'think').
+  iterate();
 
-g.with('allow-filtering') 
+g.addV('keyword').
+  property('key', 'apache').
+  iterate();
 
+// ######
+// Edges
+// ######
 g.V().has('person', 'name', 'Chet Kapoor').as('a').
    V().has('quote', 'quote_id', 'daa02698-df4f-4436-8855-941774f4c3e0').as('b').
    addE('mentioned').
    from('a').to('b').
    iterate();
+
+// Keyword
+// "think"
+g.V().has('keyword', 'key', 'think').as('a').
+   V().has('quote', 'quote_id', 'daa02698-df4f-4436-8855-941774f4c3e0').as('b').
+   addE('foundin').
+   from('a').to('b').
+   iterate();
+
+g.V().has('person', 'name', 'Chet Kapoor').as('a').
+   V().has('keyword', 'key', 'think').as('b').
+   addE('implied').
+   from('a').to('b').
+   iterate();
+
+// "apache"
+g.V().has('keyword', 'key', 'apache').as('a').
+   V().has('quote', 'quote_id', 'daa02698-df4f-4436-8855-941774f4c3e0').as('b').
+   addE('foundin').
+   from('a').to('b').
+   iterate();
+
+g.V().has('person', 'name', 'Chet Kapoor').as('a').
+   V().has('keyword', 'key', 'think').as('b').
+   addE('implied').
+   from('a').to('b').
+   iterate();
+
+
 
