@@ -10,6 +10,7 @@
 
 # Imports
 import csv
+from hashlib import sha1
 # NLP imports
 from nltk.corpus import stopwords
 from nltk.tokenize import sent_tokenize, word_tokenize 
@@ -65,6 +66,12 @@ class QuoteLoader:
         self.cluster = Cluster(execution_profiles={EXEC_PROFILE_GRAPH_DEFAULT: self.ep}, contact_points=[self.ip])
         self.session = self.cluster.connect()
 
+        self.g = DseGraph.traversal_source(session=self.session)
+
+    # Convenience function
+    def make_sha1(s, encoding='utf-8'):
+        return sha1(s.encode(encoding)).hexdigest()
+
 
     def readFile(self, file):
         with open(file) as csvfile:
@@ -80,39 +87,16 @@ class QuoteLoader:
                 person = row[1]
 
                 print("== " + person + " ==")
-
+                self.addPerson(person)
 
                 print("=== Quote ===")
                 print(quote)
 
                 self.processQuote(quote)
 
-                """
-                word_tokens = word_tokenize(quote)
-                
-                #filtered_sentence = [w for w in word_tokens if not w in stop_words]
-                #filtered_sentence = [w for w in word_tokens if not w in custom_stop_words] 
-                
-                # convert to lowercase
-                filtered_sentence  = [w.lower() for w in word_tokens]
 
-                for w in filtered_sentence: 
-                    if w not in stop_words and w.isalpha() and w not in custom_stop_words: 
-                        stopped_sentence.append(w.lower()) 
-                  
-                print("== Raw Tokens ==")
-                print(word_tokens)
-
-                #filtered_sentence = [w for w in word_tokens if not w in custom_stop_words] 
-
-                print("== Filtered ==") 
-                print(stopped_sentence) 
-
-            #print("== Stop_words ==")
-            #print(stop_words)
-            """
-
-    # Given a quote, returns an array of keywords
+    #######################################################
+    # Given a quote (string), returns an array of keywords
     def processQuote(self, quote):
 
         filtered_sentence = []
@@ -141,7 +125,7 @@ class QuoteLoader:
 
         return stopped_sentence
 
-
+    ######################
     # Processes one row
     def processRow(self, row):
         print("Processing row")
@@ -150,7 +134,22 @@ class QuoteLoader:
 
 
     def addPerson(self, person):
-        print ("Adding Person")
+        #def make_sha1(s, encoding='utf-8'):
+        #return sha1(s.encode(encoding)).hexdigest()
+        
+        sha_id = QuoteLoader.make_sha1(person)
+        print ("Adding Person: " + person + "|" + sha_id)
+
+        
+        p = self.g.addV('person') \
+            .property('person_id', sha_id) \
+            .property('company', 'DataStax') \
+            .property('name', person) \
+            .property('title', 'CEO') \
+            .next()
+        
+
+
 
     def addQuote(self, quote):
         print ("Adding Quote")
