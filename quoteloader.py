@@ -35,6 +35,15 @@ class QuoteLoader:
     def initialize(self):
         print("Initialize")
 
+        # Loading or defining stop lists
+
+        # Stop list comming from nltk
+        self.stop_words = set(stopwords.words('english'))
+
+        # My own custom stoplist
+        self.custom_stop_words = {'.', '-', "'s", 'it','and','is','...','so'}
+
+
     ############################################################
     # def connect(self,ip):
     # Class function to connect to DSE
@@ -58,15 +67,6 @@ class QuoteLoader:
 
 
     def readFile(self, file):
-        # Stop list comming from nltk
-        stop_words = set(stopwords.words('english'))
-
-        # My own custom stoplist
-        custom_stop_words = {'.', '-', "'s", 'it','and','is','...','so'}
-
-        filtered_sentence = []
-        stopped_sentence = []
-
         with open(file) as csvfile:
             csvreader = csv.reader(csvfile, delimiter=',', quotechar='\"')
             
@@ -77,9 +77,17 @@ class QuoteLoader:
 
                 # The third column is the quote
                 quote = row[5]
+                person = row[1]
+
+                print("== " + person + " ==")
+
+
                 print("=== Quote ===")
                 print(quote)
 
+                self.processQuote(quote)
+
+                """
                 word_tokens = word_tokenize(quote)
                 
                 #filtered_sentence = [w for w in word_tokens if not w in stop_words]
@@ -100,12 +108,70 @@ class QuoteLoader:
                 print("== Filtered ==") 
                 print(stopped_sentence) 
 
-        #print("== Stop_words ==")
-        #print(stop_words)
+            #print("== Stop_words ==")
+            #print(stop_words)
+            """
+
+    # Given a quote, returns an array of keywords
+    def processQuote(self, quote):
+
+        filtered_sentence = []
+        stopped_sentence = []
+
+        print("=== Quote ===")
+        print(quote)
+
+        word_tokens = word_tokenize(quote)
+        
+        # convert to lowercase
+        filtered_sentence  = [w.lower() for w in word_tokens]
+
+        # filter by stop words
+        for w in filtered_sentence: 
+            if w not in self.stop_words and w.isalpha() and w not in self.custom_stop_words: 
+                stopped_sentence.append(w.lower()) 
+          
+        print("== Raw Tokens ==")
+        print(word_tokens)
+
+        #filtered_sentence = [w for w in word_tokens if not w in custom_stop_words] 
+
+        print("== Filtered ==") 
+        print(stopped_sentence)
+
+        return stopped_sentence
+
+
+    # Processes one row
+    def processRow(self, row):
+        print("Processing row")
+
+
+
+
+    def addPerson(self, person):
+        print ("Adding Person")
+
+    def addQuote(self, quote):
+        print ("Adding Quote")
+
+    def addKeyword(self, keyword):
+        print ("Adding Keyword")
+
+
+    def addMention(self, person, quote):
+        print ("Adding Mention")
+
+    def addFoundin(self, keyword, quote):
+        print ("Adding Foundin")
+
+    def addImplied(self, keyword, quote):
+        print ("Adding Implied")
+
 
 
 if __name__ == '__main__':
-    ql = QuoteLoader("fl1")         # Constructor
+    ql = QuoteLoader("ql1")         # Constructor
     ql.initialize()                 # Init
     ql.connect('10.101.33.239')     # Connect
 
