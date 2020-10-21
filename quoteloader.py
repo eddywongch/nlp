@@ -101,16 +101,23 @@ class QuoteLoader:
 
                 print("=== Quote ===")
                 quote['snippet'] = quote_str
-
+                quote['quote_id'] =  QuoteLoader.make_sha1(quote['snippet'])
+                
                 print(quote['snippet'])
                 keyw_list = []
                 keyw_list = self.processQuote(quote['snippet'])
 
                 self.addQuoteToG(quote)
 
+                self.addMentionedToG(person, quote)
+
                 for k in keyw_list:
                     keyword['key'] = k
                     self.addKeywordToG(keyword)
+
+                    self.addFoundinToG(keyword, quote)
+
+                    self.addImpliedToG(person, keyword)
 
 
 
@@ -183,6 +190,8 @@ class QuoteLoader:
 
         print ("Adding Keyword: " + keyword['key'] )
 
+        # TODO: Check if exists, if yes, increase count
+
         q = self.g.addV('keyword') \
             .property('key', keyword['key']) \
             .next()
@@ -190,13 +199,39 @@ class QuoteLoader:
     # Edge Adding convenience Functions
 
     def addMentionedToG(self, person, quote):
+        # Person -> Quote
         print ("Adding Mention")
 
+        traversal1 = self.g.V().has('person', 'name', person['name'])
+
+        traversal2 = traversal1.addE('mentioned') \
+            .to(self.g.V().has('quote', 'quote_id', quote['quote_id']))
+
+        traversal2.iterate()
+
+
     def addFoundinToG(self, keyword, quote):
+
+        # Keyword -> Quote
         print ("Adding Foundin")
 
-    def addImpliedToG(self, keyword, quote):
+        traversal1 = self.g.V().has('keyword', 'key', keyword['key'])
+
+        traversal2 = traversal1.addE('foundin') \
+            .to(self.g.V().has('quote', 'quote_id', quote['quote_id']))
+
+        traversal2.iterate()
+
+    def addImpliedToG(self, person, keyword):
+        # Person -> Keyword
         print ("Adding Implied")
+
+        traversal1 = self.g.V().has('person', 'name', person['name'])
+
+        traversal2 = traversal1.addE('implied') \
+            .to(self.g.V().has('keyword', 'key', keyword['key']))
+
+        traversal2.iterate()
 
 
 
