@@ -57,7 +57,7 @@ class QuoteLoader:
         if ip and ip.strip():
             self.ip = ip
         else:
-            self.ip = '10.101.33.239'
+            self.ip = '10.101.33.239' # default
 
         # Create an execution profile, using GraphSON3 for Core graphs
         self.ep = DseGraph.create_execution_profile(
@@ -68,12 +68,20 @@ class QuoteLoader:
 
         self.g = DseGraph.traversal_source(session=self.session)
 
-    # Convenience function
+    ########################################
+    # Convenience function to gen SHA1 hash
     def make_sha1(s, encoding='utf-8'):
         return sha1(s.encode(encoding)).hexdigest()
 
 
-    def readFile(self, file):
+    def processFile(self, file):
+
+        # Dict objs
+        person = {}
+        quote = {}
+        keyword = {}
+
+
         with open(file) as csvfile:
             csvreader = csv.reader(csvfile, delimiter=',', quotechar='\"')
             
@@ -83,16 +91,27 @@ class QuoteLoader:
             for row in csvreader:
 
                 # The third column is the quote
-                quote = row[5]
-                person = row[1]
+                quote_str = row[5]
+                person['name'] = row[1]
+                person['title'] = row[2]
+                person['company'] = row[3]
 
-                print("== " + person + " ==")
-                self.addPerson(person)
+                print("== " + person['name'] + " ==")
+                self.addPersonToG(person)
 
                 print("=== Quote ===")
-                print(quote)
+                quote['snippet'] = quote_str
 
-                self.processQuote(quote)
+                print(quote['snippet'])
+                keyw_list = []
+                keyw_list = self.processQuote(quote['snippet'])
+
+                self.addQuoteToG(quote)
+
+                for k in keyw_list:
+                    keyword['key'] = k
+                    self.addKeywordToG(keyword)
+
 
 
     #######################################################
@@ -132,39 +151,51 @@ class QuoteLoader:
 
 
 
+    # Vertex Adding convenience functions
 
-    def addPerson(self, person):
-        #def make_sha1(s, encoding='utf-8'):
-        #return sha1(s.encode(encoding)).hexdigest()
+    def addPersonToG(self, person):
         
-        sha_id = QuoteLoader.make_sha1(person)
-        print ("Adding Person: " + person + "|" + sha_id)
+        sha_id = QuoteLoader.make_sha1(person['name'])
+        print ("Adding Person: " + person['name'] + "|" + sha_id)
 
+        # TODO: Check if person exists first
         
         p = self.g.addV('person') \
             .property('person_id', sha_id) \
-            .property('company', 'DataStax') \
-            .property('name', person) \
-            .property('title', 'CEO') \
+            .property('company', person['company']) \
+            .property('name', person['name']) \
+            .property('title', person['title']) \
             .next()
         
 
-
-
-    def addQuote(self, quote):
+    def addQuoteToG(self, quote):
         print ("Adding Quote")
 
-    def addKeyword(self, keyword):
-        print ("Adding Keyword")
+        sha_id = QuoteLoader.make_sha1(quote['snippet'])
+        print ("Adding Quote: " + quote['snippet'][0:10] + "|" + sha_id)
 
+        q = self.g.addV('quote') \
+            .property('quote_id', sha_id) \
+            .property('snippet', quote['snippet']) \
+            .next()
 
-    def addMention(self, person, quote):
+    def addKeywordToG(self, keyword):
+
+        print ("Adding Keyword: " + keyword['key'] )
+
+        q = self.g.addV('keyword') \
+            .property('key', keyword['key']) \
+            .next()
+
+    # Edge Adding convenience Functions
+
+    def addMentionedToG(self, person, quote):
         print ("Adding Mention")
 
-    def addFoundin(self, keyword, quote):
+    def addFoundinToG(self, keyword, quote):
         print ("Adding Foundin")
 
-    def addImplied(self, keyword, quote):
+    def addImpliedToG(self, keyword, quote):
         print ("Adding Implied")
 
 
@@ -175,7 +206,7 @@ if __name__ == '__main__':
     ql.connect('10.101.33.239')     # Connect
 
 
-    ql.readFile("golden-quotes1.csv")
+    ql.processFile("golden-quotes1.csv")
     #ql.readFile("golden-quotes.csv.csv")  
 
 
